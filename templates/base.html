@@ -1,0 +1,73 @@
+<div class="main-container">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">
+            <i class="fas fa-compress-arrows-alt"></i> Multimedia Compression
+        </h1>
+        <p class="lead text-muted">
+            Project Akhir - Jaringan Multimedia<br>
+            Algoritma Kompresi Lossless & Lossy untuk Teks dan Gambar
+        </p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card h-100 algorithm-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-file-alt feature-icon"></i>
+                    <h3 class="card-title">Text Compression</h3>
+                    <p class="card-text">
+                        Kompres teks menggunakan algoritma:
+                        <br>• Huffman Coding (Lossless)
+                        <br>• LZ77 (Lossless)
+                        <br>• Run Length Encoding (Lossless)
+                    </p>
+                    <a href="{{ url_for('text_compression') }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i> Mulai Kompresi Teks
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100 algorithm-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-image feature-icon"></i>
+                    <h3 class="card-title">Image Compression</h3>
+                    <p class="card-text">
+                        Kompres gambar menggunakan algoritma:
+                        <br>• JPEG (Lossy)
+                        <br>• PNG (Lossless)
+                        <br>• WebP (Lossy/Lossless)
+                    </p>
+                    <a href="{{ url_for('image_compression') }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i> Mulai Kompresi Gambar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="stats-card">
+                <i class="fas fa-trophy mb-3" style="font-size: 2rem;"></i>
+                <h4>Lossless</h4>
+                <p>Kompresi tanpa kehilangan data</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <i class="fas fa-balance-scale mb-3" style="font-size: 2rem;"></i>
+                <h4>Lossy</h4>
+                <p>Kompresi dengan trade-off kualitas</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <i class="fas fa-bolt mb-3" style="font-size: 2rem;"></i>
+                <h4>Fast</h4>
+                <p>Proses kompresi yang cepat</p>
+            </div>
+        </div>
+    </div>
+</div>

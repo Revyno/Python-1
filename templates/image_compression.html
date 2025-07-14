@@ -1,0 +1,89 @@
+
+
+
+<div class="main-container">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-primary">
+            <i class="fas fa-image"></i> Image Compression
+        </h1>
+        <p class="lead text-muted">Kompres gambar menggunakan algoritma Lossy & Lossless</p>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Upload Image</h5>
+                    <div class="mb-3">
+                        <label for="imageAlgorithm" class="form-label">Pilih Algoritma:</label>
+                        <select class="form-select" id="imageAlgorithm">
+                            <option value="jpeg">JPEG (Lossy)</option>
+                            <option value="png">PNG (Lossless)</option>
+                            <option value="webp">WebP (Lossy/Lossless)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="qualityControl">
+                        <label for="quality" class="form-label">Kualitas (1-100):</label>
+                        <input type="range" class="form-range" id="quality" min="1" max="100" value="85">
+                        <div class="text-center mt-2">
+                            <span id="qualityValue">85</span>%
+                        </div>
+                    </div>
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                        <h5>Drag & Drop atau Klik untuk Upload</h5>
+                        <p class="text-muted">Mendukung: JPG, PNG, BMP, TIFF (Max 16MB)</p>
+                        <input type="file" id="imageInput" class="d-none" accept="image/*">
+                    </div>
+                    <div id="imagePreview" class="text-center mt-3" style="display: none;">
+                        <img id="previewImg" class="image-preview" alt="Preview">
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-primary" onclick="compressImage()">
+                                <i class="fas fa-compress"></i> Kompres Gambar
+                            </button>
+                            <button type="button" class="btn btn-secondary ms-2" onclick="clearImage()">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Memproses kompresi gambar...</p>
+            </div>
+
+            <div id="error" style="display: none;"></div>
+            <div id="result" style="display: none;"></div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Informasi Algoritma</h5>
+                    <div id="imageAlgorithmInfo">
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-info-circle"></i> JPEG</h6>
+                            <p><strong>Jenis:</strong> Lossy</p>
+                            <p><strong>Prinsip:</strong> Discrete Cosine Transform (DCT)</p>
+                            <p><strong>Keunggulan:</strong> Ukuran file kecil, cocok untuk foto</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">Tips Kompresi</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> JPEG untuk foto dengan banyak warna</li>
+                        <li><i class="fas fa-check text-success"></i> PNG untuk gambar dengan transparansi</li>
+                        <li><i class="fas fa-check text-success"></i> WebP untuk web modern</li>
+                        <li><i class="fas fa-check text-success"></i> Kualitas 85% optimal untuk web</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

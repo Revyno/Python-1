@@ -1,0 +1,31 @@
+# Flask Web Framework
+Flask==2.3.3
+Werkzeug==2.3.7
+
+# Image Processing
+Pillow==10.0.1
+
+# Additional utilities (optional but recommended)
+numpy==1.24.3
+matplotlib==3.7.2
+
+# Development tools (optional)
+python-dotenv==1.0.0
+
+# For better JSON handling
+simplejson==3.19.1
+
+# For file operations
+pathlib2==2.3.7
+
+# Security
+itsdangerous==2.1.2
+
+# Template engine (comes with Flask but explicit for clarity)
+Jinja2==3.1.2
+
+# WSGI server for production (optional)
+gunicorn==21.2.0
+
+# For environment variables
+python-decouple==3.8
