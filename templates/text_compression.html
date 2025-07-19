@@ -1,73 +1,55 @@
-
-
-<div class="main-container">
-    <div class="text-center mb-5">
-        <h1 class="display-5 fw-bold text-primary">
-            <i class="fas fa-file-alt"></i> Text Compression
-        </h1>
-        <p class="lead text-muted">Kompres teks menggunakan algoritma Lossless</p>
-    </div>
-
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Input Text</h5>
-                    <div class="mb-3">
-                        <label for="algorithm" class="form-label">Pilih Algoritma:</label>
-                        <select class="form-select" id="algorithm">
-                            <option value="huffman">Huffman Coding (Lossless)</option>
-                            <option value="lz77">LZ77 (Lossless)</option>
-                            <option value="rle">Run Length Encoding (Lossless)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="textInput" class="form-label">Masukkan Teks:</label>
-                        <textarea class="form-control" id="textInput" rows="8" placeholder="Masukkan teks yang ingin dikompres..."></textarea>
-                    </div>
-                    <button type="button" class="btn btn-primary" onclick="compressText()">
-                        <i class="fas fa-compress"></i> Kompres Teks
-                    </button>
-                    <button type="button" class="btn btn-secondary ms-2" onclick="clearText()">
-                        <i class="fas fa-trash"></i> Clear
-                    </button>
-                </div>
-            </div>
-
-            <div id="loading" class="loading">
-                <div class="spinner"></div>
-                <p>Memproses kompresi...</p>
-            </div>
-
-            <div id="error" style="display: none;"></div>
-            <div id="result" style="display: none;"></div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Informasi Algoritma</h5>
-                    <div id="algorithmInfo">
-                        <div class="alert alert-info">
-                            <h6><i class="fas fa-info-circle"></i> Huffman Coding</h6>
-                            <p><strong>Jenis:</strong> Lossless</p>
-                            <p><strong>Prinsip:</strong> Menggunakan frekuensi karakter untuk membuat kode variabel</p>
-                            <p><strong>Keunggulan:</strong> Optimal untuk teks dengan distribusi karakter tidak merata</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h5 class="card-title">Tips Kompresi</h5>
-                    <ul class="list-unstyled">
-                        <li><i class="fas fa-check text-success"></i> Teks repetitif lebih baik untuk RLE</li>
-                        <li><i class="fas fa-check text-success"></i> Teks acak cocok untuk Huffman</li>
-                        <li><i class="fas fa-check text-success"></i> Teks panjang optimal untuk LZ77</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Update the algorithm selection to show neural options -->
+<div class="mb-3">
+    <label for="algorithm" class="form-label">Pilih Algoritma:</label>
+    <select class="form-select" id="algorithm">
+        <option value="neural">Neural Compression (Transformer-based)</option>
+        <option value="huffman">Huffman Coding (Lossless)</option>
+        <option value="lz77">LZ77 (Lossless)</option>
+    </select>
 </div>
+
+<!-- Update the compressText() function -->
+<script>
+    function compressText() {
+        const text = document.getElementById('textInput').value;
+        const algorithm = document.getElementById('algorithm').value;
+        
+        if (!text.trim()) {
+            showError('Silakan masukkan teks yang ingin dikompres');
+            return;
+        }
+
+        showLoading();
+        document.getElementById('error').style.display = 'none';
+        document.getElementById('result').style.display = 'none';
+
+        // Choose the appropriate API endpoint based on algorithm
+        const endpoint = algorithm === 'neural' 
+            ? '/api/neural-compress-text' 
+            : '/api/compress-text';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                text: text,
+                algorithm: algorithm
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showResult(data);
+            } else {
+                showError(data.error || 'Terjadi kesalahan saat kompresi');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showError('Terjadi kesalahan: ' + error.message);
+        });
+    }
+</script>

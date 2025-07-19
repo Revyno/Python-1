@@ -1,0 +1,195 @@
+<div class="main-container">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-primary">
+            <i class="fas fa-file-export"></i> Document Conversion
+        </h1>
+        <p class="lead text-muted">Convert between text, Word, and PDF formats</p>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Document Conversion</h5>
+                    <div class="mb-3">
+                        <label for="conversionFormat" class="form-label">Convert To:</label>
+                        <select class="form-select" id="conversionFormat">
+                            <option value="word">Microsoft Word (.docx)</option>
+                            <option value="pdf">PDF Document (.pdf)</option>
+                        </select>
+                    </div>
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                        <h5>Drag & Drop atau Klik untuk Upload</h5>
+                        <p class="text-muted">Mendukung: TXT, DOCX, PDF (Max 16MB)</p>
+                        <input type="file" id="fileInput" class="d-none" accept=".txt,.docx,.pdf">
+                    </div>
+                    <div id="fileInfo" class="mt-3" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-file"></i> <span id="fileName"></span>
+                            <span id="fileSize" class="float-end"></span>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="convertDocument()">
+                            <i class="fas fa-exchange-alt"></i> Convert Document
+                        </button>
+                        <button type="button" class="btn btn-secondary ms-2" onclick="clearDocument()">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Memproses konversi dokumen...</p>
+            </div>
+
+            <div id="error" style="display: none;"></div>
+            <div id="result" style="display: none;"></div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Supported Formats</h5>
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-file-word"></i> Word Documents</h6>
+                        <p>Convert from: PDF, TXT</p>
+                    </div>
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-file-pdf"></i> PDF Documents</h6>
+                        <p>Convert from: DOCX, TXT</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">Tips Konversi</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Format dokumen akan dipertahankan</li>
+                        <li><i class="fas fa-check text-success"></i> Teks akan diformat ulang secara otomatis</li>
+                        <li><i class="fas fa-check text-success"></i> Gambar dalam dokumen akan dipertahankan</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedDocument = null;
+
+    // Upload area drag and drop
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
+    });
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.style.backgroundColor = 'rgba(37, 99, 235, 0.05)';
+    });
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.backgroundColor = 'rgba(37, 99, 235, 0.05)';
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleDocument(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleDocument(e.target.files[0]);
+        }
+    });
+
+    function handleDocument(file) {
+        const validTypes = ['text/plain', 'application/pdf', 
+                          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        
+        if (!validTypes.includes(file.type) && !file.name.match(/\.(txt|pdf|docx)$/i)) {
+            showError('File harus berupa TXT, DOCX, atau PDF');
+            return;
+        }
+
+        if (file.size > 16 * 1024 * 1024) {
+            showError('Ukuran file tidak boleh lebih dari 16MB');
+            return;
+        }
+
+        selectedDocument = file;
+        
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = formatFileSize(file.size);
+        document.getElementById('fileInfo').style.display = 'block';
+    }
+
+    function convertDocument() {
+        if (!selectedDocument) {
+            showError('Silakan pilih dokumen terlebih dahulu');
+            return;
+        }
+
+        const format = document.getElementById('conversionFormat').value;
+
+        const formData = new FormData();
+        formData.append('file', selectedDocument);
+        formData.append('format', format);
+
+        showLoading();
+        document.getElementById('error').style.display = 'none';
+        document.getElementById('result').style.display = 'none';
+
+        fetch('/api/convert-document', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showConversionResult(data);
+            } else {
+                showError(data.error || 'Terjadi kesalahan saat konversi');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showError('Terjadi kesalahan: ' + error.message);
+        });
+    }
+
+    function showConversionResult(data) {
+        const resultDiv = document.getElementById('result');
+        const formatName = data.format === 'word' ? 'Word Document' : 'PDF Document';
+        
+        resultDiv.innerHTML = `
+            <div class="compression-result">
+                <h4><i class="fas fa-check-circle"></i> Conversion Completed!</h4>
+                <div class="text-center mt-3">
+                    <i class="fas fa-file-${data.format}" style="font-size: 4rem; color: ${data.format === 'word' ? '#2b579a' : '#f40f02'}"></i>
+                    <h5 class="mt-2">${formatName}</h5>
+                    <p>${data.converted_filename}</p>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="/download/${data.converted_filename}" class="btn btn-success">
+                        <i class="fas fa-download"></i> Download Converted File
+                    </a>
+                </div>
+            </div>
+        `;
+        resultDiv.style.display = 'block';
+    }
+
+    function clearDocument() {
+        selectedDocument = null;
+        document.getElementById('fileInfo').style.display = 'none';
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('error').style.display = 'none';
+        document.getElementById('fileInput').value = '';
+    }
+</script>

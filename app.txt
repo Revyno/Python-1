@@ -1,0 +1,163 @@
+from flask import Flask, render_template, request, jsonify, send_from_directory
+from utils.neural_codec import neural_compress_text, neural_compress_image
+from utils.document_converter import convert_to_word, convert_to_pdf
+import os
+
+app = Flask(__name__)
+app.config.from_pyfile('config.py')
+
+# Verify all required configs exist
+required_configs = ['UPLOAD_FOLDER', 'COMPRESSED_FOLDER', 'DOCUMENT_FOLDER']
+for config in required_configs:
+    if config not in app.config:
+        raise ValueError(f"Missing required configuration: {config}")
+
+# Create necessary directories
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['COMPRESSED_FOLDER'], exist_ok=True)
+os.makedirs(app.config['DOCUMENT_FOLDER'], exist_ok=True)
+
+# ... rest of your code ...
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/text-compression')
+def text_compression():
+    return render_template('text_compression.html')
+
+@app.route('/image-compression')
+def image_compression():
+    return render_template('image_compression.html')
+
+@app.route('/document-conversion')
+def document_conversion():
+    return render_template('document_conversion.html')
+
+# Neural Text Compression API
+@app.route('/api/neural-compress-text', methods=['POST'])
+def api_neural_compress_text():
+    data = request.get_json()
+    text = data.get('text', '')
+    
+    if not text:
+        return jsonify({'success': False, 'error': 'No text provided'}), 400
+    
+    try:
+        result = neural_compress_text(text)
+        return jsonify({
+            'success': True,
+            'original_size': result['original_size'],
+            'compressed_size': result['compressed_size'],
+            'compression_ratio': result['compression_ratio'],
+            'compressed': result['compressed'],
+            'model': result['model']
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Neural Image Compression API
+@app.route('/api/neural-compress-image', methods=['POST'])
+def api_neural_compress_image():
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'error': 'No image provided'}), 400
+    
+    file = request.files['image']
+    quality = int(request.form.get('quality', 85))
+    
+    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    file.save(temp_path)
+    
+    try:
+        compressed_filename = f"neural_compressed_{file.filename}"
+        compressed_path = os.path.join(app.config['COMPRESSED_FOLDER'], compressed_filename)
+        
+        result = neural_compress_image(temp_path, compressed_path, quality)
+        
+        return jsonify({
+            'success': True,
+            'original_size': result['original_size'],
+            'compressed_size': result['compressed_size'],
+            'compression_ratio': result['compression_ratio'],
+            'original_path': f"/uploads/{file.filename}",
+            'compressed_path': f"/compressed/{compressed_filename}",
+            'compressed_filename': compressed_filename,
+            'model': result['model']
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+# Document Conversion API
+@app.route('/api/convert-document', methods=['POST'])
+def api_convert_document():
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    format_type = request.form.get('format', 'word')
+    
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No selected file'}), 400
+    
+    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    file.save(temp_path)
+    
+    try:
+        if format_type == 'word':
+            output_filename = f"converted_{os.path.splitext(file.filename)[0]}.docx"
+            output_path = os.path.join(app.config['DOCUMENT_FOLDER'], output_filename)
+            convert_to_word(temp_path, output_path)
+        elif format_type == 'pdf':
+            output_filename = f"converted_{os.path.splitext(file.filename)[0]}.pdf"
+            output_path = os.path.join(app.config['DOCUMENT_FOLDER'], output_filename)
+            convert_to_pdf(temp_path, output_path)
+        else:
+            return jsonify({'success': False, 'error': 'Invalid format specified'}), 400
+        
+        return jsonify({
+            'success': True,
+            'original_path': f"/uploads/{file.filename}",
+            'converted_path': f"/documents/{output_filename}",
+            'converted_filename': output_filename,
+            'format': format_type
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+# File serving routes
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/compressed/<filename>')
+def compressed_file(filename):
+    return send_from_directory(app.config['COMPRESSED_FOLDER'], filename)
+
+@app.route('/documents/<filename>')
+def converted_document(filename):
+    return send_from_directory(app.config['DOCUMENT_FOLDER'], filename)
+
+@app.route('/download/<filename>')
+def download_file(filename):
+    if filename.endswith('.docx') or filename.endswith('.pdf'):
+        return send_from_directory(
+            app.config['DOCUMENT_FOLDER'],
+            filename,
+            as_attachment=True
+        )
+    else:
+        return send_from_directory(
+            app.config['COMPRESSED_FOLDER'],
+            filename,
+            as_attachment=True
+        )
+
+if __name__ == '__main__':
+    app.run(debug=True)

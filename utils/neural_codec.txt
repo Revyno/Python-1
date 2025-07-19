@@ -1,0 +1,114 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
+from PIL import Image
+import os
+import time
+from transformers import BertTokenizer, AutoModel
+
+class NeuralTextCompressor(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            nn.Embedding(30522, 128),  # BERT vocab size is 30522
+            nn.LSTM(128, 64, num_layers=2, bidirectional=True),
+            nn.Linear(128, 64)
+        )
+        self.decoder = nn.Sequential(
+            nn.Linear(64, 128),
+            nn.LSTM(128, 128, num_layers=2),
+            nn.Linear(128, 30522)
+        )
+        
+    def forward(self, x):
+        encoded = self.encoder(x)
+        decoded = self.decoder(encoded)
+        return decoded
+
+class NeuralImageCompressor(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 32, 3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, 3, stride=2, padding=1),
+            nn.ReLU()
+        )
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(32, 3, 3, stride=2, padding=1, output_padding=1),
+            nn.Sigmoid()
+        )
+        
+    def forward(self, x):
+        encoded = self.encoder(x)
+        decoded = self.decoder(encoded)
+        return decoded
+
+# Initialize models
+text_model = NeuralTextCompressor()
+image_model = NeuralImageCompressor()
+
+# Initialize BERT tokenizer
+tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+
+def neural_compress_text(text):
+    start_time = time.time()
+    
+    # Tokenize using BERT tokenizer
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
+    input_ids = inputs["input_ids"]
+    
+    # Compress with neural model
+    with torch.no_grad():
+        encoded = text_model.encoder(input_ids)
+        compressed = encoded.numpy().tobytes()
+    
+    original_size = len(text.encode('utf-8'))
+    compressed_size = len(compressed)
+    
+    return {
+        'compressed': compressed.hex(),  # Return as hex string for JSON
+        'original_size': original_size,
+        'compressed_size': compressed_size,
+        'compression_ratio': f"{(compressed_size / original_size) * 100:.1f}%",
+        'model': 'NeuralTextCompressor(BERT)',
+        'compression_time': time.time() - start_time
+    }
+
+def neural_compress_image(input_path, output_path, quality=85):
+    start_time = time.time()
+    
+    # Load and preprocess image
+    img = Image.open(input_path).convert('RGB')
+    img = img.resize((256, 256))
+    img_array = np.array(img) / 255.0
+    img_tensor = torch.FloatTensor(img_array).permute(2, 0, 1).unsqueeze(0)
+    
+    # Compress with neural model
+    with torch.no_grad():
+        encoded = image_model.encoder(img_tensor)
+        
+        # Apply quality-based quantization
+        scale = quality / 100.0
+        quantized = (encoded * scale).round() / scale
+        
+        decoded = image_model.decoder(quantized)
+        output_array = (decoded.squeeze().permute(1, 2, 0).numpy() * 255).astype(np.uint8)
+    
+    # Save compressed image
+    compressed_img = Image.fromarray(output_array)
+    compressed_img.save(output_path)
+    
+    original_size = os.path.getsize(input_path)
+    compressed_size = os.path.getsize(output_path)
+    
+    return {
+        'original_size': original_size,
+        'compressed_size': compressed_size,
+        'compression_ratio': f"{(compressed_size / original_size) * 100:.1f}%",
+        'model': 'NeuralImageCompressor',
+        'compression_time': time.time() - start_time
+    }

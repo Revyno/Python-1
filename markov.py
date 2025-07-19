@@ -1,23 +1,22 @@
 import math
 from collections import defaultdict
-
+# metode ppm (Prediction by Partial Matching) untuk kompresi teks/ metdoe markov 
+# metode huffman coding
 def calculate_ppm_compression(text):
-    # Langkah 1: Hitung Frekuensi dan Probabilitas
-    # Orde-0 (tanpa konteks)
+    
     order0_freq = defaultdict(int)
     for char in text:
         order0_freq[char] += 1
     total_chars = len(text)
     order0_prob = {char: freq/total_chars for char, freq in order0_freq.items()}
     
-    # Orde-1 (dengan konteks 1 karakter sebelumnya)
+
     order1_freq = defaultdict(lambda: defaultdict(int))
     for i in range(len(text)-1):
         context = text[i]
         next_char = text[i+1]
         order1_freq[context][next_char] += 1
     
-    # Hitung probabilitas orde-1
     order1_prob = defaultdict(dict)
     escape_prob = {}
     
@@ -27,7 +26,7 @@ def calculate_ppm_compression(text):
             order1_prob[context][char] = order1_freq[context][char] / (total + 1)
         escape_prob[context] = 1 / (total + 1)
     
-    # Langkah 2: Proses Kompresi
+
     total_bits = 0
     bits_per_char = []
     
@@ -35,7 +34,7 @@ def calculate_ppm_compression(text):
         char = text[i]
         
         if i == 0:
-            # Gunakan orde-0 untuk karakter pertama
+          
             prob = order0_prob[char]
             bits = -math.log2(prob)
         else:
@@ -44,15 +43,15 @@ def calculate_ppm_compression(text):
                 prob = order1_prob[context][char]
                 bits = -math.log2(prob)
             else:
-                # Jika karakter tidak ditemukan dalam konteks, gunakan probabilitas escape
+              
                 prob = escape_prob.get(context, 1)
                 bits = -math.log2(prob)
         
         total_bits += bits
         bits_per_char.append((char, bits))
     
-    # Langkah 3: Hasil Kompresi
-    original_bits = len(text) * 8  # Asumsi 8 bit per karakter ASCII
+  
+    original_bits = len(text) * 8  
     compression_ratio = (original_bits - total_bits) / original_bits * 100
     
     return {
@@ -70,12 +69,12 @@ def main():
     print("=== Program Kompresi Teks dengan PPM ===")
     print("Masukkan teks yang ingin dikompresi (tekan Enter 2 kali untuk selesai):")
     
-    # Membaca input multi-line dari pengguna
+ 
     lines = []
     while True:
         line = input()
         if line == "":
-            if len(lines) > 0:  # Jika sudah ada input dan user tekan Enter lagi
+            if len(lines) > 0:  
                 break
             else:
                 print("Silakan masukkan teks terlebih dahulu!")
@@ -90,7 +89,7 @@ def main():
     
     result = calculate_ppm_compression(text)
     
-    # Menampilkan hasil
+    
     print("\n=== Hasil Kompresi ===")
     print(f"Teks asli: {result['original_text']}")
     print(f"Total bit asli (ASCII): {result['original_bits']} bit")
